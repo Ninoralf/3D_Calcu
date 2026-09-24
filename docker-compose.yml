@@ -1,0 +1,7 @@
+services:
+  3d-printing-calculator:
+    build: .
+    container_name: 3d-printing-calculator
+    restart: unless-stopped
+    ports:
+      - "3006:3000"

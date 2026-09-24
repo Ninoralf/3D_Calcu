@@ -1,0 +1,8 @@
+{
+  "name": "3d-printing-calculator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local PETG pricing calculator for the Elegoo Neptune 4",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=20" }
+}

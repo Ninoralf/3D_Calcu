@@ -1,0 +1,27 @@
+name: Validate and build
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Validate JavaScript
+        run: |
+          node --check 3D_Print_Calculator.js
+          node --check server.js
+
+      - name: Build Docker image
+        run: docker build --tag 3d-printing-calculator:ci .

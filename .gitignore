@@ -1,0 +1,35 @@
+# Dependencies and package-manager files
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment and local configuration
+.env
+.env.*
+!.env.example
+
+# Operating-system files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editors and IDEs
+.vscode/
+.idea/
+*.swp
+
+# Logs and generated files
+*.log
+coverage/
+dist/
+build/
+
+# Local application data
+data/
+tmp/
+temp/
+
+# Docker overrides
+docker-compose.override.yml

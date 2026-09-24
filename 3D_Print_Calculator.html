@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>3D Printing Price Calculator</title>
+  <link rel="stylesheet" href="3D_Print_Calculator.css">
+</head>
+<body>
+  <main class="page-shell">
+    <section class="hero card">
+      <div class="hero-copy">
+        <p class="eyebrow">3D Print Pricing</p>
+        <h1>3D Printing Price Calculator</h1>
+        <p class="hero-text">PETG pricing for the Elegoo Neptune 4, with quotations, discounts, and exportable order details.</p>
+      </div>
+      <div class="hero-side">
+        <label class="theme-toggle" for="themeSwitch" aria-label="Toggle dark mode">
+          <span class="theme-label theme-label-light">Light</span>
+          <input id="themeSwitch" type="checkbox" />
+          <span class="theme-slider" aria-hidden="true"><span class="theme-icon theme-icon-sun">☼</span><span class="theme-icon theme-icon-moon">☾</span></span>
+          <span class="theme-label theme-label-dark">Dark</span>
+        </label>
+        <div class="hero-meta">
+          <span class="meta-label">Created by</span>
+          <strong>Ninoralf Dela Cruz</strong>
+        </div>
+      </div>
+    </section>
+
+    <div class="grid">
+      <section class="panel">
+        <details class="settings-group" open>
+          <summary>Printer Settings <span class="summary-chevron" aria-hidden="true"></span></summary>
+        <div class="card">
+          <h3>Slicer Output</h3>
+          <label>Import OrcaSlicer G-code</label>
+          <input id="gcodeFile" type="file" accept=".gcode,.g,.gc" />
+          <p id="gcodeStatus" class="import-status">No slicer file imported.</p>
+        </div>
+
+        <div class="card">
+          <h3>Material (Filament)</h3>
+          <label for="filamentType">Filament Type</label>
+          <select id="filamentType">
+            <option value="PETG">PETG</option>
+          </select>
+
+          <label>Filament Used</label>
+          <div class="inline">
+            <input id="filamentAmount" type="number" min="0" value="0" />
+            <select id="filamentUnit">
+              <option value="g">grams (g)</option>
+              <option value="kg">kilograms (kg)</option>
+              <option value="m">meters (m)</option>
+              <option value="cm">centimeters (cm)</option>
+            </select>
+          </div>
+
+          <label>Material Price</label>
+          <div class="inline">
+            <input id="priceValue" type="number" min="0" step="0.01" value="0.06" />
+            <select id="priceUnit">
+              <option value="g">per gram</option>
+              <option value="kg">per kilogram</option>
+              <option value="m">per meter</option>
+              <option value="cm">per centimeter</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Machine (Printer Time)</h3>
+          <label>Machine Rate (PHP/hour)</label>
+          <input id="machineRate" type="number" min="0" step="0.01" value="10" />
+          <label>Print Time</label>
+          <div class="inline time-inline">
+            <input id="printHours" type="number" min="0" step="1" value="1" />
+            <span>hours</span>
+            <input id="printMinutes" type="number" min="0" max="59" step="1" value="0" />
+            <span>minutes</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Energy (Electricity)</h3>
+          <label for="powerW">Elegoo Neptune 4 Average Power (W)</label>
+          <input id="powerW" type="number" min="0" value="120" />
+          <label>Electricity Rate (PHP/kWh)</label>
+          <input id="elecRate" type="number" min="0" step="0.01" value="13.5" />
+        </div>
+
+        </details>
+
+        <details class="settings-group" open>
+          <summary>Business Settings <span class="summary-chevron" aria-hidden="true"></span></summary>
+
+        <div class="card">
+          <h3>Design & Labor</h3>
+          <label>Design & Labor Cost (PHP) - flat per order</label>
+          <input id="designLabor" type="number" min="0" step="0.01" value="0" />
+        </div>
+
+        <div class="card">
+          <h3>Shipping & Packaging</h3>
+          <label>Packaging Cost (PHP) - per order</label>
+          <input id="packaging" type="number" value="0" />
+          <label>Shipping Cost (PHP) - per order</label>
+          <input id="shipping" type="number" value="0" />
+        </div>
+
+        <div class="card">
+          <h3>Profit</h3>
+          <label>Profit (%)</label>
+          <input id="profitPct" type="number" min="0" value="0" />
+        </div>
+
+        <div class="card">
+          <h3>Discount</h3>
+          <label for="discountPct">Order Discount (%)</label>
+          <input id="discountPct" type="number" min="0" max="100" step="0.01" value="0" />
+        </div>
+        </details>
+      </section>
+
+      <aside class="panel panel-sticky">
+        <div class="card order-card">
+          <h3>Order</h3>
+          <label>Currency</label>
+          <select id="currency">
+            <option>PHP</option>
+            <option>USD</option>
+          </select>
+          <label>Quantity</label>
+          <input id="quantity" type="number" min="1" value="1" />
+          <div class="row action-row">
+            <button id="calc">Recalculate</button>
+            <button id="reset" class="secondary-btn">Reset</button>
+          </div>
+        </div>
+
+        <div class="card summary">
+          <h3>Breakdown & Totals</h3>
+          <div class="line"><div>Material</div><div id="matAmt">PHP 0.00</div></div>
+          <div class="line"><div>Machine</div><div id="machAmt">PHP 0.00</div></div>
+          <div class="line"><div>Energy</div><div id="enerAmt">PHP 0.00</div></div>
+          <div class="line"><div>Design & Labor</div><div id="dlAmt">PHP 0.00</div></div>
+          <div class="line"><div>Shipping & Packaging</div><div id="spAmt">PHP 0.00</div></div>
+          <div class="line"><div>Subtotal (Cost)</div><div id="subt">PHP 0.00</div></div>
+          <div class="line"><div>Profit (@ <span id="pctLabel">0</span>%)</div><div id="profitAmt">PHP 0.00</div></div>
+          <div class="line"><div>Discount</div><div id="discountAmt">PHP 0.00</div></div>
+          <div class="line total"><div>Final Price (Order)</div><div id="finalOrder">PHP 0.00</div></div>
+          <div class="line total"><div>Final Price / Unit</div><div id="finalUnit">PHP 0.00</div></div>
+          <div class="row action-row business-actions">
+            <button id="printQuote">Print Quotation</button>
+            <button id="exportCsv" class="secondary-btn">Export CSV</button>
+          </div>
+        </div>
+
+      </aside>
+    </div>
+  </main>
+
+  <script src="3D_Print_Calculator.js"></script>
+</body>
+</html>
