@@ -2,12 +2,109 @@ const $ = id => document.getElementById(id);
 const PETG_METERS_PER_KG = 327;
 const PETG_CENTIMETERS_PER_KG = PETG_METERS_PER_KG * 100;
 const THEME_STORAGE_KEY = 'print-calculator-theme';
+const PRINTER_HOST_STORAGE_KEY = 'printer-calculator-ip';
+let printerJobs = [];
+
+function normalizePrinterHost(value) {
+    const host = value.trim().replace(/^https?:\/\//i, '').replace(/\/$/, '');
+    // Only allow a hostname/IP (and optional port), not a path or query string.
+    if (!host || /[/?#\s]/.test(host)) return null;
+    try {
+        const parsed = new URL(`http://${host}`);
+        if (!parsed.hostname || parsed.username || parsed.password || parsed.pathname !== '/') return null;
+        return parsed.host;
+    } catch {
+        return null;
+    }
+}
+
+function jobDate(job) {
+    const timestamp = Number(job.end_time || job.start_time || job.last_activity);
+    return Number.isFinite(timestamp) && timestamp > 0
+        ? new Date(timestamp * 1000).toLocaleString()
+        : 'date unavailable';
+}
+
+async function fetchPrinterJobs(hostValue = $('printerHost').value) {
+    const host = normalizePrinterHost(hostValue);
+    const status = $('printerStatus');
+    const select = $('printerJobSelect');
+    if (!host) {
+        status.textContent = 'Enter a valid local IP address or hostname, optionally with a port.';
+        return;
+    }
+
+    $('printerHost').value = host;
+    localStorage.setItem(PRINTER_HOST_STORAGE_KEY, host);
+    status.textContent = `Connecting to ${host}...`;
+    select.disabled = true;
+    select.innerHTML = '<option value="">Loading recent prints...</option>';
+
+    try {
+        const response = await fetch(`http://${host}/server/history/list?limit=5`, {
+            method: 'GET',
+            headers: { Accept: 'application/json' }
+        });
+        if (!response.ok) throw new Error(`Moonraker returned HTTP ${response.status}.`);
+        const payload = await response.json();
+        const jobs = payload?.result?.jobs;
+        if (!Array.isArray(jobs)) throw new Error('Moonraker returned an unexpected history response.');
+
+        printerJobs = jobs.filter(job => !job.status || String(job.status).toLowerCase() === 'completed').slice(0, 5);
+        select.replaceChildren();
+        if (!printerJobs.length) {
+            select.add(new Option('No completed prints found', ''));
+            status.textContent = 'Connected, but no completed print jobs were found.';
+            return;
+        }
+
+        select.add(new Option('Choose a completed print...', ''));
+        printerJobs.forEach((job, index) => {
+            const filename = job.filename || job.filament_name || `Print ${index + 1}`;
+            select.add(new Option(`${filename} — ${jobDate(job)}`, String(index)));
+        });
+        select.disabled = false;
+        status.textContent = `Loaded ${printerJobs.length} completed print${printerJobs.length === 1 ? '' : 's'} from ${host}.`;
+    } catch (error) {
+        printerJobs = [];
+        select.replaceChildren(new Option('Unable to load print history', ''));
+        const detail = error instanceof TypeError
+            ? ' Check that the printer is reachable and Moonraker allows this page in moonraker.conf (cors_domains: *).'
+            : ` ${error.message}`;
+        status.textContent = `Could not fetch printer history.${detail}`;
+    }
+}
+
+function applyPrinterJobData(job) {
+    if (!job) return;
+    const seconds = Number(job.print_duration ?? job.total_duration);
+    if (Number.isFinite(seconds) && seconds >= 0) {
+        const totalMinutes = Math.round(seconds / 60);
+        $('printHours').value = Math.floor(totalMinutes / 60);
+        $('printMinutes').value = totalMinutes % 60;
+    }
+
+    // Moonraker reports filament_used as an extruded length in millimeters.
+    const filamentMillimeters = Number(job.filament_used);
+    const filamentMeters = Number.isFinite(filamentMillimeters) && filamentMillimeters > 0
+        ? filamentMillimeters / 1000
+        : null;
+    if (filamentMeters !== null) {
+        $('filamentAmount').value = filamentMeters.toFixed(2);
+        $('filamentUnit').value = 'm';
+    }
+    const name = job.filename || job.filament_name;
+    const details = [];
+    if (name) details.push(name);
+    if (filamentMeters !== null) details.push(`${filamentMeters.toFixed(2)} m filament`);
+    if (Number.isFinite(seconds) && seconds >= 0) details.push(`${Math.floor(seconds / 3600)}h ${Math.round(seconds % 3600 / 60)}m`);
+    $('printerStatus').textContent = details.length
+        ? `Applied printer job: ${details.join(' · ')}.`
+        : 'Selected printer job. No duration or filament usage was available.';
+    calculate();
+}
 
 function getCurrencyConfig() {
-    const selected = $('currency')?.value || 'PHP';
-    if (selected === 'USD') {
-        return { locale: 'en-US', currency: 'USD' };
-    }
     return { locale: 'en-PH', currency: 'PHP' };
 }
 
@@ -227,19 +324,15 @@ function calculate(){
     const design = readNumber('designLabor');
     const packaging = readNumber('packaging');
     const shipping = readNumber('shipping');
-    const qty = Math.max(1, Math.floor(readNumber('quantity', 1)));
-
     const spTotal = packaging + shipping;
 
-    const unitSubtotal = mat + mach + energy + design;
-    const orderSubtotal = (unitSubtotal * qty) + spTotal;
+    const orderSubtotal = mat + mach + energy + design + spTotal;
     const profitPct = readNumber('profitPct');
     const profitAmt = orderSubtotal * (profitPct/100);
     const beforeDiscount = orderSubtotal + profitAmt;
     const discountPct = readNumber('discountPct', 0, 100);
     const discountAmt = beforeDiscount * (discountPct / 100);
     const finalOrder = beforeDiscount - discountAmt;
-    const finalUnit = finalOrder / qty;
 
     $('matAmt').textContent = fmt(mat);
     $('machAmt').textContent = fmt(mach);
@@ -250,18 +343,22 @@ function calculate(){
     $('profitAmt').textContent = fmt(profitAmt);
     $('discountAmt').textContent = fmt(discountAmt);
     $('finalOrder').textContent = fmt(finalOrder);
-    $('finalUnit').textContent = fmt(finalUnit);
     $('pctLabel').textContent = profitPct.toFixed(2);
-    return { mat, mach, energy, design, spTotal, orderSubtotal, profitAmt, discountAmt, finalOrder, finalUnit, qty };
+    return { mat, mach, energy, design, spTotal, orderSubtotal, profitAmt, discountAmt, finalOrder };
 }
 
-$('calc').addEventListener('click', calculate);
-$('reset').addEventListener('click', ()=> location.reload());
-$('currency').addEventListener('change', calculate);
 $('gcodeFile').addEventListener('change', importGcodeFile);
-$('currency').value = 'PHP';
-$('currency').disabled = true;
-$('currency').closest('div')?.setAttribute('aria-label', 'Currency is fixed to Philippine pesos');
+$('fetchPrinterJob').addEventListener('click', () => fetchPrinterJobs());
+$('printerHost').addEventListener('keydown', event => {
+    if (event.key === 'Enter') fetchPrinterJobs();
+});
+$('printerHost').addEventListener('change', event => {
+    localStorage.setItem(PRINTER_HOST_STORAGE_KEY, event.target.value.trim());
+});
+$('printerJobSelect').addEventListener('change', event => {
+    const index = Number(event.target.value);
+    if (event.target.value !== '' && Number.isInteger(index)) applyPrinterJobData(printerJobs[index]);
+});
 $('printQuote').addEventListener('click', () => window.print());
 $('exportCsv').addEventListener('click', () => {
     const result = calculate();
@@ -270,7 +367,7 @@ $('exportCsv').addEventListener('click', () => {
         ['Machine', result.mach], ['Energy', result.energy], ['Design & Labor', result.design],
         ['Shipping & Packaging', result.spTotal], ['Subtotal', result.orderSubtotal],
         ['Profit', result.profitAmt], ['Discount', result.discountAmt],
-        ['Final Order Price', result.finalOrder], ['Quantity', result.qty], ['Final Unit Price', result.finalUnit]
+        ['Final Price', result.finalOrder]
     ];
     const csv = rows.map(row => row.map(value => `"${String(value).replaceAll('"', '""')}"`).join(',')).join('\n');
     const link = document.createElement('a');
@@ -286,6 +383,7 @@ $('themeSwitch').addEventListener('change', (event) => {
 });
 
 initializeTheme();
+$('printerHost').value = localStorage.getItem(PRINTER_HOST_STORAGE_KEY) || '';
 calculate();
 
 document.querySelectorAll('input, select').forEach(field => {

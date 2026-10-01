@@ -30,17 +30,32 @@
 
     <div class="grid">
       <section class="panel">
-        <details class="settings-group" open>
-          <summary>Printer Settings <span class="summary-chevron" aria-hidden="true"></span></summary>
-        <div class="card">
-          <h3>Slicer Output</h3>
+        <details class="card fluidd-card" open>
+          <summary class="card-header"><h3><span class="accent-bar"></span>Slicer Output</h3><span class="chevron" aria-hidden="true"></span></summary>
+          <div class="card-body">
           <label>Import OrcaSlicer G-code</label>
           <input id="gcodeFile" type="file" accept=".gcode,.g,.gc" />
           <p id="gcodeStatus" class="import-status">No slicer file imported.</p>
-        </div>
+          </div>
+        </details>
 
-        <div class="card">
-          <h3>Material (Filament)</h3>
+        <details class="card fluidd-card" open>
+          <summary class="card-header"><h3><span class="accent-bar"></span>Moonraker Printer Connection</h3><span class="chevron" aria-hidden="true"></span></summary>
+          <div class="card-body">
+          <label for="printerHost">Printer IP / Hostname</label>
+          <input id="printerHost" type="text" placeholder="e.g., 192.168.1.100 or neptune4.local" autocomplete="url" />
+          <button id="fetchPrinterJob" type="button">Fetch Last Print</button>
+          <label for="printerJobSelect">Recent completed prints</label>
+          <select id="printerJobSelect" disabled>
+            <option value="">Fetch prints to choose a job</option>
+          </select>
+          <p id="printerStatus" class="import-status" role="status" aria-live="polite">Enter your printer's local address to load recent jobs.</p>
+          </div>
+        </details>
+
+        <details class="card fluidd-card" open>
+          <summary class="card-header"><h3><span class="accent-bar"></span>Material (Filament)</h3><span class="chevron" aria-hidden="true"></span></summary>
+          <div class="card-body">
           <label for="filamentType">Filament Type</label>
           <select id="filamentType">
             <option value="PETG">PETG</option>
@@ -67,10 +82,12 @@
               <option value="cm">per centimeter</option>
             </select>
           </div>
-        </div>
+          </div>
+        </details>
 
-        <div class="card">
-          <h3>Machine (Printer Time)</h3>
+        <details class="card fluidd-card" open>
+          <summary class="card-header"><h3><span class="accent-bar"></span>Machine (Printer Time)</h3><span class="chevron" aria-hidden="true"></span></summary>
+          <div class="card-body">
           <label>Machine Rate (PHP/hour)</label>
           <input id="machineRate" type="number" min="0" step="0.01" value="10" />
           <label>Print Time</label>
@@ -80,65 +97,55 @@
             <input id="printMinutes" type="number" min="0" max="59" step="1" value="0" />
             <span>minutes</span>
           </div>
-        </div>
+          </div>
+        </details>
 
-        <div class="card">
-          <h3>Energy (Electricity)</h3>
+        <details class="card fluidd-card" open>
+          <summary class="card-header"><h3><span class="accent-bar"></span>Energy (Electricity)</h3><span class="chevron" aria-hidden="true"></span></summary>
+          <div class="card-body">
           <label for="powerW">Elegoo Neptune 4 Average Power (W)</label>
           <input id="powerW" type="number" min="0" value="120" />
           <label>Electricity Rate (PHP/kWh)</label>
           <input id="elecRate" type="number" min="0" step="0.01" value="13.5" />
-        </div>
-
+          </div>
         </details>
 
-        <details class="settings-group" open>
-          <summary>Business Settings <span class="summary-chevron" aria-hidden="true"></span></summary>
-
-        <div class="card">
-          <h3>Design & Labor</h3>
+        <details class="card fluidd-card" open>
+          <summary class="card-header"><h3><span class="accent-bar"></span>Design &amp; Labor</h3><span class="chevron" aria-hidden="true"></span></summary>
+          <div class="card-body">
           <label>Design & Labor Cost (PHP) - flat per order</label>
           <input id="designLabor" type="number" min="0" step="0.01" value="0" />
-        </div>
+          </div>
+        </details>
 
-        <div class="card">
-          <h3>Shipping & Packaging</h3>
+        <details class="card fluidd-card" open>
+          <summary class="card-header"><h3><span class="accent-bar"></span>Shipping &amp; Packaging</h3><span class="chevron" aria-hidden="true"></span></summary>
+          <div class="card-body">
           <label>Packaging Cost (PHP) - per order</label>
           <input id="packaging" type="number" value="0" />
           <label>Shipping Cost (PHP) - per order</label>
           <input id="shipping" type="number" value="0" />
-        </div>
+          </div>
+        </details>
 
-        <div class="card">
-          <h3>Profit</h3>
+        <details class="card fluidd-card" open>
+          <summary class="card-header"><h3><span class="accent-bar"></span>Profit</h3><span class="chevron" aria-hidden="true"></span></summary>
+          <div class="card-body">
           <label>Profit (%)</label>
           <input id="profitPct" type="number" min="0" value="0" />
-        </div>
+          </div>
+        </details>
 
-        <div class="card">
-          <h3>Discount</h3>
+        <details class="card fluidd-card" open>
+          <summary class="card-header"><h3><span class="accent-bar"></span>Discount</h3><span class="chevron" aria-hidden="true"></span></summary>
+          <div class="card-body">
           <label for="discountPct">Order Discount (%)</label>
           <input id="discountPct" type="number" min="0" max="100" step="0.01" value="0" />
-        </div>
+          </div>
         </details>
       </section>
 
       <aside class="panel panel-sticky">
-        <div class="card order-card">
-          <h3>Order</h3>
-          <label>Currency</label>
-          <select id="currency">
-            <option>PHP</option>
-            <option>USD</option>
-          </select>
-          <label>Quantity</label>
-          <input id="quantity" type="number" min="1" value="1" />
-          <div class="row action-row">
-            <button id="calc">Recalculate</button>
-            <button id="reset" class="secondary-btn">Reset</button>
-          </div>
-        </div>
-
         <div class="card summary">
           <h3>Breakdown & Totals</h3>
           <div class="line"><div>Material</div><div id="matAmt">PHP 0.00</div></div>
@@ -149,8 +156,7 @@
           <div class="line"><div>Subtotal (Cost)</div><div id="subt">PHP 0.00</div></div>
           <div class="line"><div>Profit (@ <span id="pctLabel">0</span>%)</div><div id="profitAmt">PHP 0.00</div></div>
           <div class="line"><div>Discount</div><div id="discountAmt">PHP 0.00</div></div>
-          <div class="line total"><div>Final Price (Order)</div><div id="finalOrder">PHP 0.00</div></div>
-          <div class="line total"><div>Final Price / Unit</div><div id="finalUnit">PHP 0.00</div></div>
+          <div class="line total"><div>Final Price</div><div id="finalOrder">PHP 0.00</div></div>
           <div class="row action-row business-actions">
             <button id="printQuote">Print Quotation</button>
             <button id="exportCsv" class="secondary-btn">Export CSV</button>
